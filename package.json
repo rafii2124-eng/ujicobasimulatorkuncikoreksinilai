@@ -1,0 +1,25 @@
+{
+  "name": "smart-grade-ai",
+  "version": "1.0.0",
+  "description": "Aplikasi Koreksi Ujian AI Portable",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "author": "Guru Indonesia",
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.4.0"
+  },
+  "build": {
+    "appId": "com.smartgrade.ai",
+    "win": {
+      "target": "portable",
+      "icon": "icon.ico"
+    }
+  }
+}
