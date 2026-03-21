@@ -89,7 +89,9 @@
                     Menganalisis Jawaban Siswa...
                 </div>
 
-                <div class="space-y-4 pt-4 border-t">
+                <div id="error-display" class="hidden p-4 bg-rose-50 text-rose-600 rounded-xl text-xs font-mono"></div>
+
+                <div class="space-y-4 pt-4 border-t" id="correction-area">
                     <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">Review Input</h4>
                     <input id="pg-student-input" class="w-full p-4 border rounded-xl text-xl font-mono tracking-[0.4em] uppercase" placeholder="Ketik PG jika tidak terdeteksi (Contoh: ABCDE)">
                     <div id="manual-review" class="space-y-3"></div>
@@ -100,7 +102,10 @@
 
         <!-- TAB 3: Rekap -->
         <div id="tab-recap" class="tab-content space-y-6">
-            <h2 class="text-xl font-bold">Data Nilai Terkoreksi</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold">Data Nilai Terkoreksi</h2>
+                <button onclick="results=[];renderRecap()" class="text-xs text-rose-500 font-bold">Hapus Semua</button>
+            </div>
             <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
                 <table class="w-full text-left">
                     <thead class="bg-slate-50 border-b">
@@ -122,7 +127,7 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         
-        const apiKey = "";
+        const apiKey = ""; // API Key otomatis terisi di environment ini
         let examKeys = { multipleChoice: [], shortAnswer: [], essay: [] };
         let results = [];
 
@@ -143,7 +148,9 @@
             if(!file) return;
 
             const loader = document.getElementById(`loader-${type}`);
+            const errorDisp = document.getElementById('error-display');
             loader.classList.remove('hidden');
+            errorDisp.classList.add('hidden');
 
             try {
                 let images = [];
@@ -152,11 +159,11 @@
                     for(let i=1; i<=pdf.numPages; i++) {
                         const page = await pdf.getPage(i);
                         const canvas = document.createElement('canvas');
-                        const viewport = page.getViewport({scale: 1.5});
+                        const viewport = page.getViewport({scale: 1.2}); // Skala sedikit dikurangi untuk efisiensi
                         canvas.height = viewport.height;
                         canvas.width = viewport.width;
                         await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
-                        images.push(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+                        images.push(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
                     }
                 } else {
                     const canvas = document.createElement('canvas');
@@ -168,18 +175,19 @@
                         reader.readAsDataURL(file);
                     });
                     await new Promise(r => img.onload = r);
-                    const scale = Math.min(1200 / img.width, 1);
+                    const scale = Math.min(1000 / img.width, 1); // Batas lebar 1000px agar ringan
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    images.push(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+                    images.push(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
                 }
 
                 if(type === 'key') await analyzeKey(images);
                 else await analyzeStudent(images);
 
             } catch(err) {
-                alert("Error: " + err.message);
+                errorDisp.innerText = "Sistem Error: " + err.message;
+                errorDisp.classList.remove('hidden');
             } finally {
                 loader.classList.add('hidden');
                 e.target.value = '';
@@ -187,66 +195,79 @@
         }
 
         async function callAI(parts) {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    contents: [{parts}],
-                    generationConfig: { responseMimeType: "application/json" }
-                })
-            });
-            if(!res.ok) throw new Error("API Error: " + res.status);
-            const data = await res.json();
-            const text = data.candidates[0].content.parts[0].text;
-            // Clean AI response from potential markdown backticks
-            const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
-            return JSON.parse(cleaned);
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        contents: [{parts}],
+                        generationConfig: { 
+                            responseMimeType: "application/json",
+                            temperature: 0.1
+                        }
+                    })
+                });
+                if(!res.ok) throw new Error("API Google tidak merespon (Status: "+res.status+")");
+                const data = await res.json();
+                const text = data.candidates[0].content.parts[0].text;
+                // Regex cleaner untuk membersihkan backticks atau teks tambahan
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("AI tidak mengembalikan format data yang valid");
+                return JSON.parse(jsonMatch[0]);
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
         }
 
         async function analyzeKey(images) {
             const parts = images.map(img => ({inlineData: {mimeType: "image/jpeg", data: img}}));
-            parts.unshift({text: "Ekstrak kunci jawaban dari gambar ini. Output JSON murni: { \"multipleChoice\": [{\"q\":\"1\", \"k\":\"A\", \"p\":2}], \"shortAnswer\": [{\"q\":\"Label\", \"k\":\"Jawaban\", \"p\":5}], \"essay\": [{\"q\":\"Label\", \"k\":\"Kriteria\", \"p\":10}] }"});
+            parts.unshift({text: "IDENTIFIKASI KUNCI JAWABAN. Kembalikan JSON persis seperti ini: { \"multipleChoice\": [{\"q\":\"1\", \"k\":\"A\", \"p\":2}], \"shortAnswer\": [{\"q\":\"Label\", \"k\":\"Jawaban\", \"p\":5}], \"essay\": [{\"q\":\"Label\", \"k\":\"Kriteria\", \"p\":10}] }. Pastikan semua soal terbaca."});
             
             const data = await callAI(parts);
-            if(data.multipleChoice) examKeys.multipleChoice = data.multipleChoice.map(i => ({id: Math.random(), question: i.q, key: i.k, points: i.p}));
-            if(data.shortAnswer) examKeys.shortAnswer = data.shortAnswer.map(i => ({id: Math.random(), question: i.q, key: i.k, points: i.p}));
-            if(data.essay) examKeys.essay = data.essay.map(i => ({id: Math.random(), question: i.q, key: i.k, points: i.p}));
+            if(data.multipleChoice) examKeys.multipleChoice = data.multipleChoice.map(i => ({id: Math.random(), question: i.q, key: i.k, points: i.p || 2}));
+            if(data.shortAnswer) examKeys.shortAnswer = data.shortAnswer.map(i => ({id: Math.random(), question: i.q, key: i.k, points: i.p || 5}));
+            if(data.essay) examKeys.essay = data.essay.map(i => ({id: Math.random(), question: i.q, key: i.k, points: i.p || 10}));
             renderKeys();
         }
 
         async function analyzeStudent(images) {
             const parts = images.map(img => ({inlineData: {mimeType: "image/jpeg", data: img}}));
-            parts.unshift({text: "Ekstrak jawaban siswa. Output JSON: { \"name\": \"...\", \"pg\": \"ABC...\", \"isian\": {\"Q\": \"Ans\"}, \"esai\": {\"Q\": \"Ans\"} }"});
+            parts.unshift({text: "EKSTRAK JAWABAN SISWA. Kembalikan JSON: { \"name\": \"...\", \"pg\": \"ABCDE...\", \"isian\": {\"Q\": \"Ans\"}, \"esai\": {\"Q\": \"Ans\"} }. Jika tulisan tidak jelas, biarkan string kosong."});
             
             const data = await callAI(parts);
             if(data.name) document.getElementById('student-name').value = data.name;
-            if(data.pg) document.getElementById('pg-student-input').value = data.pg.replace(/\s/g, '').toUpperCase();
+            if(data.pg) document.getElementById('pg-student-input').value = data.pg.replace(/[^A-Za-z]/g, '').toUpperCase();
             
             const reviewDiv = document.getElementById('manual-review');
             reviewDiv.innerHTML = '';
             
             examKeys.shortAnswer.forEach(k => {
-                const ans = data.isian?.[k.question] || "";
+                const ans = data.isian?.[k.question] || data.isian?.[Object.keys(data.isian).find(key => key.includes(k.question))] || "";
                 reviewDiv.innerHTML += `
                     <div class="p-3 bg-white border rounded-xl">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">${k.question}</label>
-                        <input id="ans-isian-${k.id}" value="${ans}" class="w-full text-sm outline-none font-medium">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Isian: ${k.question}</label>
+                        <input id="ans-isian-${k.id}" value="${ans}" class="w-full text-sm outline-none font-medium text-blue-700">
                     </div>
                 `;
             });
             examKeys.essay.forEach(k => {
-                const ans = data.esai?.[k.question] || "";
+                const ans = data.esai?.[k.question] || data.esai?.[Object.keys(data.esai).find(key => key.includes(k.question))] || "";
                 reviewDiv.innerHTML += `
                     <div class="p-3 bg-white border rounded-xl">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">${k.question}</label>
-                        <textarea id="ans-esai-${k.id}" class="w-full text-sm outline-none font-medium h-16">${ans}</textarea>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Esai: ${k.question}</label>
+                        <textarea id="ans-esai-${k.id}" class="w-full text-sm outline-none font-medium h-16 text-orange-700">${ans}</textarea>
                     </div>
                 `;
             });
+            
+            // Scroll ke area koreksi agar user tahu data sudah masuk
+            document.getElementById('correction-area').scrollIntoView({ behavior: 'smooth' });
         }
 
         function addItem(type) {
-            examKeys[type].push({id: Math.random(), question: `Soal ${examKeys[type].length+1}`, key: '', points: type==='multipleChoice'?2:10});
+            const num = examKeys[type].length + 1;
+            examKeys[type].push({id: Math.random(), question: `No ${num}`, key: '', points: type==='multipleChoice'?2:(type==='shortAnswer'?5:10)});
             renderKeys();
         }
 
@@ -263,7 +284,7 @@
 
             document.getElementById('isian-container').innerHTML = examKeys.shortAnswer.map((item, idx) => `
                 <div class="bg-slate-50 p-2 rounded-lg border text-[10px] space-y-1">
-                    <input oninput="examKeys.shortAnswer[${idx}].question=this.value" value="${item.question}" class="w-full bg-transparent font-bold outline-none">
+                    <input oninput="examKeys.shortAnswer[${idx}].question=this.value" value="${item.question}" class="w-full bg-transparent font-bold outline-none" placeholder="Nama Soal">
                     <div class="flex gap-2">
                         <input oninput="examKeys.shortAnswer[${idx}].key=this.value" value="${item.key}" placeholder="Kunci" class="flex-1 p-1 bg-white border rounded">
                         <input type="number" oninput="examKeys.shortAnswer[${idx}].points=Number(this.value)" value="${item.points}" class="w-8 p-1 bg-white border rounded text-center">
@@ -273,9 +294,9 @@
 
             document.getElementById('esai-container').innerHTML = examKeys.essay.map((item, idx) => `
                 <div class="bg-slate-50 p-2 rounded-lg border text-[10px] space-y-1">
-                    <input oninput="examKeys.essay[${idx}].question=this.value" value="${item.question}" class="w-full bg-transparent font-bold outline-none">
+                    <input oninput="examKeys.essay[${idx}].question=this.value" value="${item.question}" class="w-full bg-transparent font-bold outline-none" placeholder="Nama Soal">
                     <div class="flex gap-2">
-                        <textarea oninput="examKeys.essay[${idx}].key=this.value}" class="flex-1 p-1 bg-white border rounded h-10">${item.key}</textarea>
+                        <textarea oninput="examKeys.essay[${idx}].key=this.value" class="flex-1 p-1 bg-white border rounded h-10" placeholder="Kriteria Penilaian">${item.key}</textarea>
                         <input type="number" oninput="examKeys.essay[${idx}].points=Number(this.value)" value="${item.points}" class="w-8 p-1 bg-white border rounded text-center h-10">
                     </div>
                 </div>
@@ -287,15 +308,21 @@
             const name = document.getElementById('student-name').value;
             const pgInput = document.getElementById('pg-student-input').value.split('');
             const btn = document.getElementById('btn-submit');
-            if(!name) return alert("Isi nama siswa!");
+            const errorDisp = document.getElementById('error-display');
+            
+            if(!name) return alert("Silakan isi nama siswa terlebih dahulu.");
+            if(examKeys.multipleChoice.length === 0 && examKeys.shortAnswer.length === 0 && examKeys.essay.length === 0) {
+                return alert("Atur Kunci Jawaban di tab pertama sebelum memulai koreksi.");
+            }
 
             btn.disabled = true;
-            btn.innerText = "MENGHITUNG...";
+            btn.innerText = "MENGHITUNG NILAI...";
+            errorDisp.classList.add('hidden');
 
             const studentAnswers = {
                 pg: pgInput,
-                isian: examKeys.shortAnswer.map(k => ({id: k.id, q: k.question, a: document.getElementById(`ans-isian-${k.id}`).value})),
-                essay: examKeys.essay.map(k => ({id: k.id, q: k.question, a: document.getElementById(`ans-esai-${k.id}`).value}))
+                isian: examKeys.shortAnswer.map(k => ({id: k.id, q: k.question, a: document.getElementById(`ans-isian-${k.id}`)?.value || ""})),
+                essay: examKeys.essay.map(k => ({id: k.id, q: k.question, a: document.getElementById(`ans-esai-${k.id}`)?.value || ""}))
             };
 
             try {
@@ -303,23 +330,24 @@
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        contents: [{parts: [{text: `Koreksi jawaban siswa terhadap kunci. Berikan skor yang adil untuk isian dan esai. KUNCI: ${JSON.stringify(examKeys)}, SISWA: ${JSON.stringify(studentAnswers)}. Output JSON murni: { "details": {"pg": [{"score": 2}], "isian": [{"score": 5}], "esai": [{"score": 10}]}, "total": 100 }`}]}],
+                        contents: [{parts: [{text: `KOREKSI NILAI. Bandingkan jawaban siswa dengan kunci. Berikan skor per butir soal. KUNCI: ${JSON.stringify(examKeys)}, SISWA: ${JSON.stringify(studentAnswers)}. Kembalikan JSON murni: { "details": {"pg": [{"score": 2}], "isian": [{"score": 5}], "esai": [{"score": 8}]}, "total": 85 }`}]}],
                         generationConfig: { responseMimeType: "application/json" }
                     })
                 });
                 const analysis = await res.json();
-                const cleaned = analysis.candidates[0].content.parts[0].text.replace(/```json/g, "").replace(/```/g, "").trim();
-                const final = JSON.parse(cleaned);
+                const jsonMatch = analysis.candidates[0].content.parts[0].text.match(/\{[\s\S]*\}/);
+                const final = JSON.parse(jsonMatch[0]);
 
                 results.push({ name, timestamp: new Date().toLocaleString('id-ID'), final });
                 switchTab('recap');
                 
-                // Clear fields
+                // Reset form koreksi
                 document.getElementById('student-name').value = '';
                 document.getElementById('pg-student-input').value = '';
                 document.getElementById('manual-review').innerHTML = '';
             } catch(e) {
-                alert("Gagal menghitung nilai. Periksa koneksi.");
+                errorDisp.innerText = "Gagal menghitung: " + e.message;
+                errorDisp.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
                 btn.innerText = "SIMPAN & HITUNG NILAI";
@@ -342,7 +370,10 @@
                 const eS = (det.esai || []).reduce((a,b)=>a+(b.score||0), 0);
                 return `
                     <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-4 font-bold"><div>${r.name}</div><div class="text-[9px] text-slate-400 font-normal">${r.timestamp}</div></td>
+                        <td class="p-4 font-bold">
+                            <div class="text-indigo-900">${r.name}</div>
+                            <div class="text-[9px] text-slate-400 font-normal italic">${r.timestamp}</div>
+                        </td>
                         <td class="p-4 text-xs font-medium text-slate-500">${pgS}</td>
                         <td class="p-4 text-xs font-medium text-blue-600">${iS}</td>
                         <td class="p-4 text-xs font-medium text-orange-600">${eS}</td>
@@ -352,7 +383,13 @@
             }).reverse().join('');
         }
 
-        window.onload = () => { lucide.createIcons(); renderKeys(); };
+        window.onload = () => { 
+            lucide.createIcons(); 
+            // Tambah placeholder data jika kosong agar UI tidak mati
+            if(examKeys.multipleChoice.length === 0) {
+                for(let i=0; i<5; i++) addItem('multipleChoice');
+            }
+        };
     </script>
 </body>
 </html>
