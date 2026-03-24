@@ -13,7 +13,6 @@
         .tab-content.active { display: block; }
         .animate-fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @media print { .no-print { display: none; } }
         .loader { border-top-color: #6366f1; animation: spinner 1s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -21,401 +20,307 @@
 <body class="bg-slate-50 text-slate-900 min-h-screen pb-12">
 
     <!-- Navigasi -->
-    <nav class="bg-indigo-700 text-white p-4 shadow-lg sticky top-0 z-50 no-print">
-        <div class="max-w-full mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+    <nav class="bg-indigo-700 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-2">
                 <i data-lucide="brain-circuit" class="w-8 h-8"></i>
                 <h1 class="text-2xl font-bold tracking-tight">Smart Grade AI</h1>
             </div>
-            <div class="flex bg-indigo-800/50 p-1 rounded-xl gap-1" id="nav-tabs">
-                <button onclick="switchTab('keys')" id="btn-keys" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 bg-white text-indigo-700 shadow">
-                    <i data-lucide="save" class="w-4 h-4"></i> Kunci Jawaban
+            <div class="flex bg-indigo-800/50 p-1 rounded-xl gap-1">
+                <button onclick="window.switchTab('keys')" id="btn-keys" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 bg-white text-indigo-700 shadow">
+                    <i data-lucide="save" class="w-4 h-4"></i> Kunci
                 </button>
-                <button onclick="switchTab('upload')" id="btn-upload" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 hover:bg-indigo-600 text-white">
-                    <i data-lucide="upload" class="w-4 h-4"></i> Koreksi Jawaban
+                <button onclick="window.switchTab('upload')" id="btn-upload" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 hover:bg-indigo-600 text-white">
+                    <i data-lucide="upload" class="w-4 h-4"></i> Koreksi
                 </button>
-                <button onclick="switchTab('recap')" id="btn-recap" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 hover:bg-indigo-600 text-white">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Rekap Nilai
+                <button onclick="window.switchTab('recap')" id="btn-recap" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 hover:bg-indigo-600 text-white">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Rekap
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-full mx-auto p-4 md:p-8">
+    <main class="max-w-7xl mx-auto p-4 md:p-8">
         
         <!-- TAB 1: Kunci Jawaban -->
         <div id="tab-keys" class="tab-content active animate-fade-in space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-800">Master Kunci Jawaban</h2>
-                    <p class="text-slate-500 text-sm">Upload foto kunci jawaban atau isi manual di bawah.</p>
+                    <h2 class="text-xl font-bold">Master Kunci Jawaban</h2>
+                    <p class="text-slate-500 text-sm">Input kunci jawaban. Nilai Akhir maksimal adalah 100.</p>
                 </div>
-                
-                <div class="flex items-center gap-2">
-                    <label class="cursor-pointer bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 flex items-center gap-2 transition-all">
-                        <i data-lucide="file-up" class="w-4 h-4"></i>
-                        <span>Upload Kunci (Foto/PDF)</span>
-                        <input type="file" class="hidden" accept="image/*,.pdf" onchange="handleKeyUpload(event)">
+                <div class="flex gap-2">
+                    <button onclick="window.clearKeys()" class="px-4 py-2 text-rose-600 text-sm font-bold border border-rose-200 rounded-xl hover:bg-rose-50 transition-all flex items-center gap-1">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Reset Kunci
+                    </button>
+                    <label class="cursor-pointer bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 flex items-center gap-2 transition-all">
+                        <i data-lucide="scan-line" class="w-5 h-5"></i> Scan Kunci
+                        <input type="file" id="key-upload-input" class="hidden" accept="image/*" onchange="window.handleKeyUpload(event)">
                     </label>
                 </div>
             </div>
 
-            <!-- Loader Kunci -->
-            <div id="key-loader" class="hidden p-8 bg-white border-2 border-dashed border-indigo-200 rounded-3xl shadow-sm flex flex-col items-center justify-center gap-4 text-indigo-700 animate-fade-in">
-                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-100 h-12 w-12"></div>
-                <div class="text-center">
-                    <p class="font-black text-lg">AI sedang Membaca Gambar...</p>
-                    <p class="text-slate-400 text-sm">Proses ini memakan waktu 5-10 detik</p>
-                </div>
+            <div id="key-loader" class="hidden p-12 bg-white rounded-3xl border-2 border-dashed border-indigo-200 flex flex-col items-center gap-4 text-center">
+                <div class="loader rounded-full border-4 border-t-4 border-indigo-500 h-12 w-12"></div>
+                <p class="font-bold text-indigo-700 text-lg">AI sedang Membaca Kunci Jawaban...</p>
             </div>
 
             <div class="grid lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border overflow-hidden">
                     <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
-                        <h3 class="font-semibold flex items-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i> Pilihan Ganda</h3>
-                        <button onclick="addRow('multipleChoice')" class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-200 flex items-center gap-1">
-                            <i data-lucide="plus" class="w-3 h-3"></i> Tambah Soal
-                        </button>
+                        <h3 class="font-bold flex items-center gap-2"><i data-lucide="list-checks" class="text-indigo-600"></i> Pilihan Ganda</h3>
+                        <button onclick="window.addRow('multipleChoice')" class="text-xs bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">Tambah</button>
                     </div>
-                    <div class="p-0 overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                                    <th class="p-4 w-12 text-center">No</th>
-                                    <th class="p-4">Pertanyaan</th>
-                                    <th class="p-4 w-28">Kunci</th>
-                                    <th class="p-4 w-28">Poin</th>
-                                    <th class="p-4 text-right w-16"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="pg-body" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
+                    <table class="w-full">
+                        <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400">
+                            <tr class="border-b">
+                                <th class="p-4 w-12 text-center">No</th>
+                                <th class="p-4 text-left">Label</th>
+                                <th class="p-4 w-32 text-center">Kunci</th>
+                                <th class="p-4 w-20 text-center">Poin</th>
+                                <th class="p-4 w-16 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pg-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
                 </div>
 
                 <div class="space-y-6">
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
                         <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
-                            <h3 class="font-semibold flex items-center gap-2 text-sm"><i data-lucide="edit-3" class="w-4 h-4 text-blue-500"></i> Isian Singkat</h3>
-                            <button onclick="addRow('shortAnswer')" class="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-bold">Tambah</button>
+                            <h3 class="font-bold text-sm">Isian Singkat</h3>
+                            <button onclick="window.addRow('shortAnswer')" class="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-md font-bold">Tambah</button>
                         </div>
-                        <div id="isian-body" class="p-4 space-y-3 max-h-[400px] overflow-y-auto"></div>
+                        <div id="isian-body" class="p-4 space-y-3"></div>
                     </div>
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
                         <div class="bg-slate-50 p-4 border-b flex justify-between items-center">
-                            <h3 class="font-semibold flex items-center gap-2 text-sm"><i data-lucide="align-left" class="w-4 h-4 text-orange-500"></i> Esai</h3>
-                            <button onclick="addRow('essay')" class="text-[10px] bg-orange-50 text-orange-700 px-2 py-1 rounded-md font-bold">Tambah</button>
+                            <h3 class="font-bold text-sm">Esai</h3>
+                            <button onclick="window.addRow('essay')" class="text-[10px] bg-orange-600 text-white px-3 py-1 rounded-md font-bold">Tambah</button>
                         </div>
-                        <div id="esai-body" class="p-4 space-y-3 max-h-[400px] overflow-y-auto"></div>
+                        <div id="esai-body" class="p-4 space-y-3"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- TAB 2: Koreksi -->
-        <div id="tab-upload" class="tab-content animate-fade-in max-w-4xl mx-auto space-y-8">
-            <div class="text-center">
-                <h2 class="text-2xl font-bold text-slate-800">Koreksi Jawaban Siswa</h2>
-                <p class="text-slate-500">Input jawaban siswa atau upload foto lembar jawaban.</p>
-            </div>
-
+        <div id="tab-upload" class="tab-content animate-fade-in max-w-4xl mx-auto space-y-6">
             <div class="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 space-y-8">
                 <div class="grid md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Nama Siswa</label>
-                        <input type="text" id="student-name" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="Nama Lengkap Siswa">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-slate-600">Nama Siswa</label>
+                        <input type="text" id="student-name" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-indigo-500 transition-all" placeholder="Nama Lengkap">
                     </div>
-                    <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">Upload Hasil Jawaban</label>
-                        <label class="w-full flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl cursor-pointer hover:bg-emerald-100 transition-all font-bold">
-                            <i data-lucide="camera" class="w-5 h-5"></i> Scan Lembar Jawaban
-                            <input type="file" class="hidden" accept="image/*" onchange="handleStudentUpload(event)">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-bold text-slate-600">Scan Jawaban</label>
+                        <label class="w-full flex items-center justify-center gap-3 p-4 bg-indigo-50 text-indigo-700 border-2 border-dashed border-indigo-200 rounded-2xl cursor-pointer font-bold hover:bg-indigo-100 transition-all">
+                            <i data-lucide="camera" class="w-6 h-6"></i> Ambil Foto Lembar Jawaban
+                            <input type="file" class="hidden" accept="image/*" onchange="window.handleStudentUpload(event)">
                         </label>
                     </div>
                 </div>
 
-                <div id="correction-loader" class="hidden p-6 bg-emerald-50 border border-emerald-100 rounded-2xl flex flex-col items-center gap-3 text-emerald-700 animate-pulse">
-                    <div class="loader ease-linear rounded-full border-4 border-t-4 border-emerald-500 h-8 w-8"></div>
-                    <span class="text-sm font-bold">AI sedang menganalisis jawaban...</span>
+                <div id="correction-loader" class="hidden p-6 bg-indigo-50 rounded-2xl flex flex-col items-center gap-3 text-indigo-700 border border-indigo-100 text-center">
+                    <div class="loader rounded-full border-4 border-t-4 border-indigo-500 h-8 w-8"></div>
+                    <span class="font-bold italic">AI sedang mendeteksi jawaban tulisan tangan...</span>
                 </div>
 
                 <div class="space-y-6">
-                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Input Jawaban Siswa</h4>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 mb-2">Jawaban Pilihan Ganda (Berurutan)</label>
-                                <input id="pg-input" placeholder="Contoh: ABCDE..." class="w-full p-4 border-2 rounded-xl text-xl tracking-[0.5em] font-mono uppercase focus:border-indigo-500 outline-none shadow-inner bg-white">
-                            </div>
-
-                            <div id="manual-inputs-container" class="grid md:grid-cols-2 gap-4">
-                                <div id="isian-manual-container" class="space-y-4"></div>
-                                <div id="esai-manual-container" class="space-y-4"></div>
-                            </div>
-                        </div>
+                    <div class="p-5 bg-slate-50 rounded-3xl border-2 border-slate-100">
+                        <label class="block text-xs font-black text-slate-400 mb-3 uppercase tracking-widest">Input Pilihan Ganda</label>
+                        <input id="pg-input" class="w-full p-5 border-2 rounded-2xl text-2xl tracking-[0.3em] font-mono uppercase outline-none focus:border-indigo-600 bg-white shadow-sm" placeholder="ABCDE...">
                     </div>
-
-                    <button id="btn-submit" onclick="processKoreksi()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black text-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-indigo-200 shadow-xl">
-                        <i data-lucide="check-square" class="w-6 h-6"></i> SELESAIKAN KOREKSI
-                    </button>
+                    <div id="manual-inputs-container" class="grid md:grid-cols-2 gap-4">
+                        <div id="isian-manual-container" class="space-y-4"></div>
+                        <div id="esai-manual-container" class="space-y-4"></div>
+                    </div>
                 </div>
+
+                <button onclick="window.processKoreksi()" id="btn-submit" class="w-full bg-indigo-600 text-white p-6 rounded-3xl font-black text-xl hover:bg-indigo-700 flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95">
+                    <i data-lucide="check-circle" class="w-8 h-8"></i> KOREKSI SEKARANG
+                </button>
             </div>
         </div>
 
-        <!-- TAB 3: Rekap Nilai -->
+        <!-- TAB 3: Rekap -->
         <div id="tab-recap" class="tab-content animate-fade-in space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
-                <h2 class="text-2xl font-bold text-slate-800">Rekapitulasi Nilai</h2>
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Rekapitulasi Nilai (Max 100)</h2>
                 <div class="flex gap-2">
-                    <button onclick="downloadExcel()" class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm hover:bg-emerald-700 transition-all">
-                        <i data-lucide="download" class="w-4 h-4"></i> Simpan CSV
-                    </button>
-                    <button onclick="clearResults()" class="px-5 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-sm font-bold flex items-center gap-2">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i> Bersihkan
+                    <button onclick="window.clearRecap()" class="bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-sm font-bold border border-rose-100 hover:bg-rose-100 transition-all">Hapus Semua Rekap</button>
+                    <button onclick="window.downloadCSV()" class="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg hover:bg-emerald-700 transition-all">
+                        <i data-lucide="download" class="w-5 h-5"></i> Download CSV
                     </button>
                 </div>
             </div>
-
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full" id="main-recap-table">
-                        <thead>
-                            <tr class="bg-slate-50 text-left text-[11px] font-black text-slate-500 uppercase tracking-widest border-b-2">
-                                <th class="p-4">Siswa</th>
-                                <th class="p-4">PG</th>
-                                <th class="p-4">Isian</th>
-                                <th class="p-4">Esai</th>
-                                <th class="p-4 text-center bg-indigo-600 text-white">SKOR</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recap-table-body" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="no-data-msg" class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center gap-2">
-                <i data-lucide="folder-open" class="w-12 h-12 text-slate-300"></i>
-                <span class="text-slate-400 font-medium">Belum ada data nilai.</span>
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-50 text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                        <tr>
+                            <th class="p-5 text-left">Siswa</th>
+                            <th class="p-5 text-center">PG</th>
+                            <th class="p-5 text-center">Isian</th>
+                            <th class="p-5 text-center">Esai</th>
+                            <th class="p-5 text-center bg-slate-100">Skor Total</th>
+                            <th class="p-5 bg-indigo-600 text-white text-center">NILAI AKHIR</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recap-table-body" class="divide-y divide-slate-100"></tbody>
+                </table>
             </div>
         </div>
     </main>
 
     <script>
-        // Gunakan string kosong, sistem akan menyuntikkan kunci saat runtime
         const apiKey = ""; 
         let examKeys = { multipleChoice: [], shortAnswer: [], essay: [] };
         let results = [];
 
-        function refreshIcons() {
-            if (window.lucide) window.lucide.createIcons();
-        }
+        function refreshIcons() { if (window.lucide) window.lucide.createIcons(); }
 
-        function switchTab(tabId) {
+        window.switchTab = (tabId) => {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            const target = document.getElementById(`tab-${tabId}`);
-            if (target) target.classList.add('active');
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-white', 'text-indigo-700', 'shadow');
-                btn.classList.add('hover:bg-indigo-600', 'text-white');
-            });
-            const activeBtn = document.getElementById(`btn-${tabId}`);
-            if (activeBtn) {
-                activeBtn.classList.add('bg-white', 'text-indigo-700', 'shadow');
-                activeBtn.classList.remove('hover:bg-indigo-600', 'text-white');
-            }
-
-            if (tabId === 'upload') renderManualInputs();
-            if (tabId === 'recap') renderRecapTable();
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.className = 'tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 hover:bg-indigo-600 text-white');
+            document.getElementById(`btn-${tabId}`).className = 'tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 bg-white text-indigo-700 shadow';
+            if (tabId === 'upload') window.renderManualInputs();
+            if (tabId === 'recap') window.renderRecapTable();
             refreshIcons();
-        }
+        };
 
-        function addRow(type) {
+        window.addRow = (type) => {
             const id = Date.now() + Math.random();
-            examKeys[type].push({ 
-                id, 
-                question: type === 'multipleChoice' ? `Soal ${examKeys[type].length + 1}` : 'Tulis pertanyaan...', 
-                key: '', 
-                points: type === 'multipleChoice' ? 2 : type === 'shortAnswer' ? 5 : 10 
-            });
-            renderKeys();
-        }
+            const defaults = { multipleChoice: 2, shortAnswer: 5, essay: 10 };
+            // Perbaikan: Pastikan key default adalah 'A' agar select langsung terisi
+            const initialKey = type === 'multipleChoice' ? 'A' : '';
+            examKeys[type].push({ id, question: `${examKeys[type].length + 1}`, key: initialKey, points: defaults[type] });
+            window.renderKeys();
+        };
 
-        function removeRow(type, id) {
+        window.removeRow = (type, id) => {
             examKeys[type] = examKeys[type].filter(item => item.id !== id);
-            renderKeys();
-        }
+            window.renderKeys();
+        };
 
-        function updateKey(type, id, field, value) {
+        window.updateKey = (type, id, field, value) => {
             const idx = examKeys[type].findIndex(item => item.id === id);
             if (idx !== -1) {
                 examKeys[type][idx][field] = field === 'points' ? parseFloat(value) || 0 : value;
             }
-        }
+        };
 
-        function renderKeys() {
+        window.clearKeys = () => {
+            if(confirm("Hapus semua data kunci jawaban?")) {
+                examKeys = { multipleChoice: [], shortAnswer: [], essay: [] };
+                window.renderKeys();
+            }
+        };
+
+        window.clearRecap = () => {
+            if(confirm("Hapus semua data hasil koreksi di rekap?")) {
+                results = [];
+                window.renderRecapTable();
+            }
+        };
+
+        window.renderKeys = () => {
             document.getElementById('pg-body').innerHTML = examKeys.multipleChoice.map((item, idx) => `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="p-4 text-center text-slate-400 font-bold">${idx+1}</td>
-                    <td class="p-4"><input oninput="updateKey('multipleChoice', ${item.id}, 'question', this.value)" value="${item.question}" class="w-full bg-transparent border-b border-transparent focus:border-indigo-300 outline-none text-sm font-medium"></td>
+                <tr class="hover:bg-slate-50">
+                    <td class="p-4 text-center font-bold text-slate-300 text-sm">${idx+1}</td>
+                    <td class="p-4"><input oninput="window.updateKey('multipleChoice', ${item.id}, 'question', this.value)" value="${item.question}" class="w-full bg-transparent outline-none"></td>
                     <td class="p-4">
-                        <select onchange="updateKey('multipleChoice', ${item.id}, 'key', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs font-black w-full text-indigo-700">
-                            <option value="">Pilih</option>
-                            ${['A','B','C','D','E'].map(opt => `<option value="${opt}" ${item.key === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                        <select onchange="window.updateKey('multipleChoice', ${item.id}, 'key', this.value)" class="w-full bg-slate-100 p-2 rounded-xl font-bold text-center border-0 focus:ring-2 focus:ring-indigo-500">
+                            ${['A','B','C','D','E'].map(o => `<option value="${o}" ${item.key.toUpperCase() === o ? 'selected' : ''}>${o}</option>`).join('')}
                         </select>
                     </td>
-                    <td class="p-4"><input type="number" oninput="updateKey('multipleChoice', ${item.id}, 'points', this.value)" value="${item.points}" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-center font-bold"></td>
-                    <td class="p-4 text-right">
-                        <button onclick="removeRow('multipleChoice', ${item.id})" class="text-rose-300 hover:text-rose-600"><i data-lucide="x-circle" class="w-5 h-5"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+                    <td class="p-4"><input type="number" oninput="window.updateKey('multipleChoice', ${item.id}, 'points', this.value)" value="${item.points}" class="w-full text-center bg-slate-50 border p-2 rounded-lg"></td>
+                    <td class="p-4 text-center"><button onclick="window.removeRow('multipleChoice', ${item.id})" class="text-rose-400 hover:text-rose-600 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button></td>
+                </tr>`).join('');
 
-            document.getElementById('isian-body').innerHTML = examKeys.shortAnswer.map((item) => `
-                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 relative group">
-                    <button onclick="removeRow('shortAnswer', ${item.id})" class="absolute top-2 right-2 text-rose-300 opacity-0 group-hover:opacity-100"><i data-lucide="trash" class="w-3 h-3"></i></button>
-                    <input oninput="updateKey('shortAnswer', ${item.id}, 'question', this.value)" value="${item.question}" class="w-full text-xs font-bold bg-transparent mb-1 outline-none">
+            document.getElementById('isian-body').innerHTML = examKeys.shortAnswer.map(item => `
+                <div class="p-4 bg-slate-50 rounded-2xl border relative mb-2">
+                    <input oninput="window.updateKey('shortAnswer', ${item.id}, 'question', this.value)" value="${item.question}" class="w-full text-xs font-black text-slate-400 bg-transparent mb-2 uppercase">
                     <div class="flex gap-2">
-                        <input oninput="updateKey('shortAnswer', ${item.id}, 'key', this.value)" value="${item.key}" placeholder="Kunci" class="flex-1 text-[10px] bg-white border rounded p-1">
-                        <input type="number" oninput="updateKey('shortAnswer', ${item.id}, 'points', this.value)" value="${item.points}" class="w-10 text-[10px] bg-white border rounded p-1 text-center font-bold">
+                        <input oninput="window.updateKey('shortAnswer', ${item.id}, 'key', this.value)" value="${item.key}" placeholder="Kunci" class="flex-1 text-xs bg-white border p-2 rounded-xl">
+                        <input type="number" oninput="window.updateKey('shortAnswer', ${item.id}, 'points', this.value)" value="${item.points}" class="w-12 text-xs bg-white border p-2 rounded-xl text-center font-bold">
                     </div>
-                </div>
-            `).join('');
+                    <button onclick="window.removeRow('shortAnswer', ${item.id})" class="absolute top-2 right-2 text-rose-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>`).join('');
 
-            document.getElementById('esai-body').innerHTML = examKeys.essay.map((item) => `
-                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 relative group">
-                    <button onclick="removeRow('essay', ${item.id})" class="absolute top-2 right-2 text-rose-300 opacity-0 group-hover:opacity-100"><i data-lucide="trash" class="w-3 h-3"></i></button>
-                    <input oninput="updateKey('essay', ${item.id}, 'question', this.value)" value="${item.question}" class="w-full text-xs font-bold bg-transparent mb-1 outline-none">
-                    <textarea oninput="updateKey('essay', ${item.id}, 'key', this.value)" placeholder="Kriteria..." class="w-full text-[10px] bg-white border rounded p-1 h-12">${item.key}</textarea>
-                    <div class="flex items-center justify-end gap-1 mt-1">
-                        <span class="text-[8px] text-slate-400">Poin:</span>
-                        <input type="number" oninput="updateKey('essay', ${item.id}, 'points', this.value)" value="${item.points}" class="w-10 text-[10px] bg-white border rounded p-1 text-center font-bold">
+            document.getElementById('esai-body').innerHTML = examKeys.essay.map(item => `
+                <div class="p-4 bg-slate-50 rounded-2xl border relative mb-2">
+                    <input oninput="window.updateKey('essay', ${item.id}, 'question', this.value)" value="${item.question}" class="w-full text-xs font-black text-slate-400 bg-transparent mb-2 uppercase">
+                    <textarea oninput="window.updateKey('essay', ${item.id}, 'key', this.value)" placeholder="Kriteria..." class="w-full text-xs bg-white border p-3 rounded-xl h-20">${item.key}</textarea>
+                    <div class="flex justify-between items-center mt-2">
+                        <input type="number" oninput="window.updateKey('essay', ${item.id}, 'points', this.value)" value="${item.points}" class="w-12 text-xs bg-white border p-1.5 rounded-lg text-center font-bold">
+                        <button onclick="window.removeRow('essay', ${item.id})" class="text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
             refreshIcons();
-        }
+        };
 
-        function renderManualInputs() {
-            const isianCont = document.getElementById('isian-manual-container');
-            const esaiCont = document.getElementById('esai-manual-container');
-            
-            isianCont.innerHTML = examKeys.shortAnswer.length > 0 ? '<h5 class="text-[10px] font-black text-blue-500 mb-2 uppercase">Isian Singkat</h5>' : '';
-            isianCont.innerHTML += examKeys.shortAnswer.map(item => `
-                <div class="bg-white p-3 rounded-xl border border-slate-200">
-                    <p class="text-[9px] font-bold text-slate-500 mb-1">${item.question}</p>
-                    <input id="input-isian-${item.id}" class="w-full p-2 text-sm border-b focus:border-indigo-400 outline-none" placeholder="...">
-                </div>
-            `).join('');
+        async function callGemini(prompt, base64 = null) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const parts = [{ text: prompt }];
+            if (base64) parts.push({ inlineData: { mimeType: "image/png", data: base64 } });
+            const payload = { contents: [{ parts }], generationConfig: { responseMimeType: "application/json", temperature: 0.1 } };
 
-            esaiCont.innerHTML = examKeys.essay.length > 0 ? '<h5 class="text-[10px] font-black text-orange-500 mb-2 uppercase">Esai</h5>' : '';
-            esaiCont.innerHTML += examKeys.essay.map(item => `
-                <div class="bg-white p-3 rounded-xl border border-slate-200">
-                    <p class="text-[9px] font-bold text-slate-500 mb-1">${item.question}</p>
-                    <textarea id="input-esai-${item.id}" class="w-full p-2 text-sm border rounded h-20 outline-none focus:ring-1 focus:ring-indigo-400" placeholder="..."></textarea>
-                </div>
-            `).join('');
-        }
-
-        async function fetchAI(prompt, inlineData = null) {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
-            const payload = {
-                contents: [{ 
-                    parts: [
-                        { text: prompt }
-                    ] 
-                }],
-                generationConfig: { 
-                    responseMimeType: "application/json",
-                    temperature: 0.1 
-                }
-            };
-            
-            if (inlineData) {
-                payload.contents[0].parts.push({ inlineData });
-            }
-
-            // Implementasi Exponential Backoff
             for (let i = 0; i < 5; i++) {
                 try {
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error?.message || "Kesalahan API");
-                    }
-                    
-                    const result = await response.json();
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!text) throw new Error("Format respon AI tidak valid");
-                    
-                    return JSON.parse(text);
+                    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const json = await resp.json();
+                    return JSON.parse(json.candidates[0].content.parts[0].text);
                 } catch (e) {
                     if (i === 4) throw e;
-                    const delay = Math.pow(2, i) * 1000;
-                    await new Promise(r => setTimeout(r, delay));
+                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
                 }
             }
         }
 
-        async function handleKeyUpload(event) {
-            const file = event.target.files[0];
+        window.handleKeyUpload = async (e) => {
+            const file = e.target.files[0];
             if (!file) return;
-
             const loader = document.getElementById('key-loader');
             loader.classList.remove('hidden');
-
             const reader = new FileReader();
             reader.onload = async () => {
                 try {
                     const b64 = reader.result.split(',')[1];
-                    const prompt = `Analisis gambar kunci jawaban ini secara teliti.
-                    Ekstrak data ke dalam format JSON berikut:
-                    {
-                        "multipleChoice": [{"question": "Nomor 1", "key": "A", "points": 2}],
-                        "shortAnswer": [{"question": "Ibukota Indonesia?", "key": "Jakarta", "points": 5}],
-                        "essay": [{"question": "Jelaskan fotosintesis", "key": "Proses tumbuhan...", "points": 10}]
+                    const prompt = "Ekstrak kunci jawaban dari foto ini (PG, Isian, Esai). Untuk PG, pastikan nilai 'key' hanya satu karakter (A/B/C/D/E). JSON format: {multipleChoice:[{question, key, points}], shortAnswer:[], essay:[]}";
+                    const data = await callGemini(prompt, b64);
+                    if (data) {
+                        // Perbaikan: Normalisasi data hasil scan agar sesuai dengan state
+                        examKeys = { 
+                            multipleChoice: (data.multipleChoice || []).map(i => ({
+                                id: Math.random(),
+                                question: i.question || "Soal",
+                                key: (i.key || "A").trim().toUpperCase().charAt(0),
+                                points: parseFloat(i.points) || 2
+                            })),
+                            shortAnswer: (data.shortAnswer || []).map(i => ({
+                                id: Math.random(),
+                                question: i.question || "Soal",
+                                key: i.key || "",
+                                points: parseFloat(i.points) || 5
+                            })),
+                            essay: (data.essay || []).map(i => ({
+                                id: Math.random(),
+                                question: i.question || "Soal",
+                                key: i.key || "",
+                                points: parseFloat(i.points) || 10
+                            }))
+                        };
+                        window.renderKeys();
                     }
-                    Instruksi Khusus:
-                    1. Pastikan "key" pada PG hanya satu huruf A/B/C/D/E.
-                    2. Jika poin tidak tertulis, gunakan default: PG=2, Isian=5, Esai=10.
-                    3. Berikan array kosong jika salah satu kategori soal tidak ditemukan.`;
-
-                    const extracted = await fetchAI(prompt, { mimeType: file.type, data: b64 });
-                    
-                    // Reset existing keys
-                    examKeys = { multipleChoice: [], shortAnswer: [], essay: [] };
-
-                    ['multipleChoice', 'shortAnswer', 'essay'].forEach(type => {
-                        if (extracted[type] && Array.isArray(extracted[type])) {
-                            examKeys[type] = extracted[type].map(item => ({
-                                id: Math.random() + Date.now(),
-                                question: item.question || (type === 'multipleChoice' ? `Soal ${examKeys[type].length + 1}` : '...'),
-                                key: String(item.key || "").toUpperCase().trim(),
-                                points: parseFloat(item.points) || (type === 'multipleChoice' ? 2 : type === 'shortAnswer' ? 5 : 10)
-                            }));
-                        }
-                    });
-
-                    renderKeys();
-                } catch (e) {
-                    console.error(e);
-                    alert("Gagal membaca gambar kunci: " + e.message);
-                } finally {
-                    loader.classList.add('hidden');
-                    event.target.value = '';
-                }
+                } catch (err) { alert("AI gagal membaca foto kunci: " + err.message); }
+                finally { loader.classList.add('hidden'); e.target.value = ''; }
             };
             reader.readAsDataURL(file);
-        }
+        };
 
-        async function handleStudentUpload(event) {
-            const file = event.target.files[0];
+        window.handleStudentUpload = async (e) => {
+            const file = e.target.files[0];
             if (!file) return;
             const loader = document.getElementById('correction-loader');
             loader.classList.remove('hidden');
@@ -423,138 +328,117 @@
             reader.onload = async () => {
                 try {
                     const b64 = reader.result.split(',')[1];
-                    const prompt = `Deteksi jawaban siswa dari foto ini. Fokus pada tulisan tangan atau tanda silang.
-                    Ekstrak ke format JSON: { "pg": "ABCDE", "isian": {"Pertanyaan": "Jawaban"}, "esai": {"Pertanyaan": "Jawaban"} }`;
-                    const detected = await fetchAI(prompt, { mimeType: file.type, data: b64 });
-                    
-                    if (detected.pg) document.getElementById('pg-input').value = detected.pg.replace(/\s/g, '');
+                    const prompt = `Deteksi jawaban siswa dari foto lembar jawaban. JSON: {"pg": "string urutan jawaban misal ABCDE...", "isian": {"nomor": "jawaban"}, "esai": {"nomor": "jawaban"}}`;
+                    const data = await callGemini(prompt, b64);
+                    if (data.pg) document.getElementById('pg-input').value = data.pg.toUpperCase().replace(/\s/g, '');
                     
                     examKeys.shortAnswer.forEach(k => {
-                        const val = detected.isian?.[k.question] || Object.values(detected.isian || {})[0];
-                        if (val) document.getElementById(`input-isian-${k.id}`).value = val;
+                        const val = data.isian?.[k.question] || data.isian?.[Object.keys(data.isian || {})[0]] || "";
+                        const input = document.getElementById(`input-isian-${k.id}`);
+                        if (input) input.value = val;
                     });
                     examKeys.essay.forEach(k => {
-                        const val = detected.esai?.[k.question] || Object.values(detected.esai || {})[0];
-                        if (val) document.getElementById(`input-esai-${k.id}`).value = val;
+                        const val = data.esai?.[k.question] || data.esai?.[Object.keys(data.esai || {})[0]] || "";
+                        const input = document.getElementById(`input-esai-${k.id}`);
+                        if (input) input.value = val;
                     });
-                } catch (e) {
-                    alert("Gagal mendeteksi jawaban: " + e.message);
-                } finally {
-                    loader.classList.add('hidden');
-                    event.target.value = '';
-                }
+                } catch (err) { alert("Deteksi jawaban siswa gagal: " + err.message); }
+                finally { loader.classList.add('hidden'); e.target.value = ''; }
             };
             reader.readAsDataURL(file);
-        }
+        };
 
-        async function processKoreksi() {
-            const nameField = document.getElementById('student-name');
-            const name = nameField.value.trim();
-            if (!name) return alert("Harap masukkan nama siswa terlebih dahulu!");
-
+        window.processKoreksi = async () => {
+            const name = document.getElementById('student-name').value;
+            if (!name) return alert("Masukkan nama siswa.");
+            
             const btn = document.getElementById('btn-submit');
-            const originalHTML = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<div class="loader ease-linear rounded-full border-2 border-t-2 border-white h-5 w-5 inline-block mr-2"></div> MENGANALISIS...`;
+            btn.innerHTML = "MENGHITUNG...";
 
-            const pgInput = document.getElementById('pg-input');
             const studentAnswers = {
-                multipleChoice: pgInput.value.toUpperCase().replace(/\s/g, '').split(''),
-                shortAnswer: examKeys.shortAnswer.map(k => ({ id: k.id, question: k.question, ans: document.getElementById(`input-isian-${k.id}`).value })),
-                essay: examKeys.essay.map(k => ({ id: k.id, question: k.question, ans: document.getElementById(`input-esai-${k.id}`).value }))
+                pg: document.getElementById('pg-input').value.toUpperCase().split(''),
+                isian: examKeys.shortAnswer.map(k => ({ q: k.question, a: document.getElementById(`input-isian-${k.id}`)?.value || "" })),
+                esai: examKeys.essay.map(k => ({ q: k.question, a: document.getElementById(`input-esai-${k.id}`)?.value || "" }))
             };
 
-            const prompt = `Koreksi jawaban siswa secara adil sesuai kunci yang diberikan. Berikan skor proporsional untuk isian dan esai.
-            KUNCI JAWABAN: ${JSON.stringify(examKeys)}
-            JAWABAN SISWA: ${JSON.stringify(studentAnswers)}
-            
-            Berikan output JSON dengan struktur:
-            {
-                "summary": { "totalScore": 0 },
-                "details": {
-                    "multipleChoice": [{"id": 0, "isCorrect": true, "score": 2}],
-                    "shortAnswer": [{"id": 0, "isCorrect": true, "score": 5}],
-                    "essay": [{"id": 0, "score": 8}]
-                }
-            }`;
-
             try {
-                const analysis = await fetchAI(prompt);
+                const prompt = `Koreksi jawaban. KUNCI: ${JSON.stringify(examKeys)} JAWABAN: ${JSON.stringify(studentAnswers)}. Berikan skor per butir soal berdasarkan kunci. JSON: {"summary": {"totalScore": 0}, "details": {"multipleChoice": [{"score": 0}], "shortAnswer": [{"score": 0}], "essay": [{"score": 0}]}}`;
+                const result = await callGemini(prompt);
                 
-                results.push({
-                    id: Date.now(),
-                    studentName: name,
-                    timestamp: new Date().toLocaleString('id-ID'),
-                    analysis: analysis
+                const rawScore = result.summary.totalScore;
+                const baseValue = 60; 
+                
+                let finalGrade = Math.max(baseValue, rawScore);
+                if (finalGrade > 100) finalGrade = 100;
+                
+                results.push({ 
+                    studentName: name, 
+                    timestamp: new Date().toLocaleString('id-ID'), 
+                    analysis: result,
+                    finalGrade: Math.round(finalGrade)
                 });
+                
+                window.switchTab('recap');
+                document.getElementById('student-name').value = '';
+                document.getElementById('pg-input').value = '';
+            } catch (err) { alert("Proses koreksi gagal: " + err.message); }
+            finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="check-circle" class="w-8 h-8"></i> KOREKSI SEKARANG'; refreshIcons(); }
+        };
 
-                // Clear Form
-                nameField.value = '';
-                pgInput.value = '';
-                examKeys.shortAnswer.forEach(k => { if(document.getElementById(`input-isian-${k.id}`)) document.getElementById(`input-isian-${k.id}`).value = ''; });
-                examKeys.essay.forEach(k => { if(document.getElementById(`input-esai-${k.id}`)) document.getElementById(`input-esai-${k.id}`).value = ''; });
-
-                switchTab('recap');
-                alert("Koreksi selesai untuk: " + name);
-            } catch (e) {
-                alert("Kesalahan Proses: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
-                refreshIcons();
-            }
-        }
-
-        function renderRecapTable() {
+        window.renderRecapTable = () => {
             const body = document.getElementById('recap-table-body');
-            const noData = document.getElementById('no-data-msg');
-            
             if (results.length === 0) {
-                body.innerHTML = '';
-                noData.classList.remove('hidden');
+                body.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-slate-400 italic">Belum ada data rekap.</td></tr>';
                 return;
             }
-            
-            noData.classList.add('hidden');
             body.innerHTML = results.map(res => {
-                const det = res.analysis.details || { multipleChoice: [], shortAnswer: [], essay: [] };
-                const pgScore = (det.multipleChoice || []).reduce((a, b) => a + (b.score || 0), 0);
-                const isianScore = (det.shortAnswer || []).reduce((a, b) => a + (b.score || 0), 0);
-                const esaiScore = (det.essay || []).reduce((a, b) => a + (b.score || 0), 0);
-                const total = res.analysis.summary?.totalScore || (pgScore + isianScore + esaiScore);
-
-                return `<tr>
-                    <td class="p-4 border-r"><b>${res.studentName}</b><br><small class="text-slate-400 text-[9px]">${res.timestamp}</small></td>
-                    <td class="p-4 border-r font-medium">${pgScore}</td>
-                    <td class="p-4 border-r font-medium">${isianScore}</td>
-                    <td class="p-4 border-r font-medium">${esaiScore}</td>
-                    <td class="p-4 text-center bg-indigo-50 font-black text-indigo-700 text-lg">${total}</td>
-                </tr>`;
+                const det = res.analysis.details || {};
+                const pg = (det.multipleChoice || []).reduce((a,b) => a + (b.score || 0), 0);
+                const isian = (det.shortAnswer || []).reduce((a,b) => a + (b.score || 0), 0);
+                const esai = (det.essay || []).reduce((a,b) => a + (b.score || 0), 0);
+                return `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="p-5 font-bold text-slate-800">${res.studentName}<br><small class="text-slate-400 font-normal">${res.timestamp}</small></td>
+                        <td class="p-5 text-center">${pg}</td>
+                        <td class="p-5 text-center">${isian}</td>
+                        <td class="p-5 text-center">${esai}</td>
+                        <td class="p-5 text-center bg-slate-50 font-bold">${res.analysis.summary.totalScore}</td>
+                        <td class="p-5 text-center bg-indigo-600 text-white font-black text-xl">${res.finalGrade}</td>
+                    </tr>`;
             }).reverse().join('');
-        }
+        };
 
-        function downloadExcel() {
-            if (results.length === 0) return alert("Tidak ada data untuk diunduh.");
-            let csv = "Nama Siswa,Tanggal,PG,Isian,Esai,Total\n";
+        window.renderManualInputs = () => {
+            document.getElementById('isian-manual-container').innerHTML = examKeys.shortAnswer.map(k => `
+                <div class="bg-white p-4 rounded-2xl border shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 mb-2 uppercase">${k.question}</p>
+                    <input id="input-isian-${k.id}" class="w-full text-sm outline-none border-b-2 focus:border-indigo-500">
+                </div>`).join('');
+            document.getElementById('esai-manual-container').innerHTML = examKeys.essay.map(k => `
+                <div class="bg-white p-4 rounded-2xl border shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 mb-2 uppercase">${k.question}</p>
+                    <textarea id="input-esai-${k.id}" class="w-full text-sm outline-none border p-2 rounded-xl h-24"></textarea>
+                </div>`).join('');
+        };
+
+        window.downloadCSV = () => {
+            let csv = "Nama Siswa,Skor PG,Skor Isian,Skor Esai,Skor Total Mentah,NILAI AKHIR\n";
             results.forEach(res => {
                 const det = res.analysis.details || {};
-                const pg = (det.multipleChoice || []).reduce((a, b) => a + (b.score || 0), 0);
-                const isian = (det.shortAnswer || []).reduce((a, b) => a + (b.score || 0), 0);
-                const esai = (det.essay || []).reduce((a, b) => a + (b.score || 0), 0);
-                const total = res.analysis.summary?.totalScore || (pg + isian + esai);
-                csv += `"${res.studentName}","${res.timestamp}",${pg},${isian},${esai},${total}\n`;
+                const pg = (det.multipleChoice || []).reduce((a,b) => a + (b.score || 0), 0);
+                const isian = (det.shortAnswer || []).reduce((a,b) => a + (b.score || 0), 0);
+                const esai = (det.essay || []).reduce((a,b) => a + (b.score || 0), 0);
+                csv += `"${res.studentName}",${pg},${isian},${esai},${res.analysis.summary.totalScore},${res.finalGrade}\n`;
             });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Rekap_Nilai.csv';
-            a.click();
-        }
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Rekap_Nilai_Koreksi.csv`;
+            link.click();
+        };
 
-        function clearResults() { if(confirm("Hapus semua data rekap?")) { results = []; renderRecapTable(); } }
-
-        window.onload = () => { renderKeys(); refreshIcons(); };
+        window.onload = () => { window.renderKeys(); refreshIcons(); };
     </script>
 </body>
 </html>
